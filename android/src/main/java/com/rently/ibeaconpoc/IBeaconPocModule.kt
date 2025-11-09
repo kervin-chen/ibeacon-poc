@@ -30,21 +30,23 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
     fun startScanning(options: ReadableMap?, promise: Promise) {
         // Request runtime permissions (Android 12+ requires BLUETOOTH_SCAN/CONNECT + location)
         if (!hasAllPermissions()) {
-            requestPermissions()
+            requestPermissions() // host app should actually request and then retry
         }
         if (isScanning) { promise.resolve(null); return }
         val uuids = options?.getArray("uuids")?.toArrayList()?.map { it.toString() }
         region = if (!uuids.isNullOrEmpty()) {
-            // Only support first UUID for simple POC; extend later
             Region("IBeaconPocRegion", Identifier.parse(uuids.first()), null, null)
         } else {
             Region("IBeaconPocRegion", null, null, null)
         }
-        val scanPeriod = options?.getInt("androidScanPeriodMs") ?: 1100
-        val betweenScanPeriod = options?.getInt("androidBetweenScanPeriodMs") ?: 0
-        beaconManager.foregroundScanPeriod = scanPeriod.toLong()
-        beaconManager.foregroundBetweenScanPeriod = betweenScanPeriod.toLong()
+        val scanPeriod = safeGetInt(options, "androidScanPeriodMs", 1100)
+        val betweenScanPeriod = safeGetInt(options, "androidBetweenScanPeriodMs", 0)
         try {
+            beaconManager.foregroundScanPeriod = scanPeriod.toLong()
+            beaconManager.foregroundBetweenScanPeriod = betweenScanPeriod.toLong()
+            // Disable scheduled jobs for faster foreground ranging in a library context
+            beaconManager.setEnableScheduledScanJobs(false)
+            beaconManager.setBackgroundMode(false)
             beaconManager.addRangeNotifier(this)
             beaconManager.bind(this)
             isScanning = true
@@ -132,5 +134,11 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
 
     private fun requestPermissions() {
         // Leave to hosting app; cannot show UI here. POC placeholder.
+    }
+
+    private fun safeGetInt(map: ReadableMap?, key: String, fallback: Int): Int {
+        return try {
+            if (map != null && map.hasKey(key) && !map.isNull(key)) map.getInt(key) else fallback
+        } catch (_: Exception) { fallback }
     }
 }
