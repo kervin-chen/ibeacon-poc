@@ -5,6 +5,9 @@ import com.facebook.react.modules.core.DeviceEventManagerModule
 import org.altbeacon.beacon.*
 import android.os.Build
 import android.content.pm.PackageManager
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 
 class IBeaconPocModule(private val reactContext: ReactApplicationContext): ReactContextBaseJavaModule(reactContext), BeaconConsumer, RangeNotifier {
     private val beaconManager: BeaconManager by lazy { BeaconManager.getInstanceForApplication(reactContext) }
@@ -17,8 +20,8 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
     override fun initialize() {
         super.initialize()
         // iBeacon layout default already included from 2.20+, ensure parser
-        if (beaconManager.beaconParsers.none { it.layout.contains("ibeacon") }) {
-            val iBeaconParser = BeaconParser().setBeaconLayout("m:2-3=\x02\x15,i:4-19,i:20-21,i:22-23,p:24-24")
+        if (beaconManager.beaconParsers.none { it.layout.contains("m:2-3=0215") }) {
+            val iBeaconParser = BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24")
             beaconManager.beaconParsers.add(iBeaconParser)
         }
     }
@@ -85,9 +88,7 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
     override fun onBeaconServiceConnect() {
         try {
             region?.let { beaconManager.startRangingBeaconsInRegion(it) }
-        } catch (e: Exception) {
-            // ignore for POC
-        }
+        } catch (_: Exception) { }
     }
 
     override fun didRangeBeaconsInRegion(beacons: Collection<Beacon>, region: Region) {
@@ -111,9 +112,11 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
     }
 
     override fun getApplicationContext(): Context = reactContext.applicationContext
-    override fun unbindService(p0: ServiceConnection?) { reactContext.unbindService(p0!!) }
-    override fun bindService(intent: android.content.Intent?, serviceConnection: ServiceConnection?, mode: Int): Boolean {
-        return reactContext.bindService(intent, serviceConnection!!, mode)
+    override fun bindService(intent: Intent, serviceConnection: ServiceConnection, mode: Int): Boolean {
+        return reactContext.bindService(intent, serviceConnection, mode)
+    }
+    override fun unbindService(serviceConnection: ServiceConnection) {
+        reactContext.unbindService(serviceConnection)
     }
 
     private fun hasAllPermissions(): Boolean {
