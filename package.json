@@ -1,0 +1,39 @@
+{
+  "name": "@rently/ibeacon-poc",
+  "version": "0.0.1",
+  "description": "POC React Native iBeacon scanning module (Android AltBeacon + iOS CoreLocation)",
+  "main": "lib/index.js",
+  "react-native": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "source": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p .",
+    "clean": "rm -rf lib",
+    "prepare": "npm run build"
+  },
+  "keywords": ["react-native", "ibeacon", "altbeacon", "bluetooth", "corelocation"],
+  "author": "Rently",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rently/ibeacon-poc.git"
+  },
+  "files": [
+    "lib",
+    "src",
+    "android",
+    "ios",
+    "*.podspec",
+    "README.md",
+    "LICENSE"
+  ],
+  "peerDependencies": {
+    "react": ">=17",
+    "react-native": ">=0.71"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/react": "^18.0.0",
+    "react-native": "^0.73.0"
+  }
+}
