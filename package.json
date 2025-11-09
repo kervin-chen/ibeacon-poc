@@ -16,7 +16,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rently/ibeacon-poc.git"
+    "url": "git+https://github.com/kervin-chen/ibeacon-poc.git"
   },
   "files": [
     "lib",
