@@ -1,9 +1,9 @@
 buildscript {
     ext {
         kotlinVersion = '1.9.0'
-        minSdkVersion = 21
-        compileSdkVersion = 34
-        targetSdkVersion = 34
+        minSdkVersionRNBeacon = 21
+        compileSdkVersionRNBeacon = 34
+        targetSdkVersionRNBeacon = 34
     }
     repositories {
         google()
@@ -20,11 +20,11 @@ apply plugin: 'kotlin-android'
 
 android {
     namespace "com.rently.ibeaconpoc"
-    compileSdkVersion compileSdkVersion
+    compileSdkVersion compileSdkVersionRNBeacon
 
     defaultConfig {
-        minSdkVersion minSdkVersion
-        targetSdkVersion targetSdkVersion
+        minSdkVersion minSdkVersionRNBeacon
+        targetSdkVersion targetSdkVersionRNBeacon
         versionCode 1
         versionName "0.0.1"
         consumerProguardFiles "consumer-rules.pro"
@@ -54,5 +54,5 @@ repositories {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation 'org.altbeacon:android-beacon-library:2.20.5'
-    implementation 'com.facebook.react:react-android:+' // resolve from RN app
+    implementation 'com.facebook.react:react-android:+' // resolved from host app
 }

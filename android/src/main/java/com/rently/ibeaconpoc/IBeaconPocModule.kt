@@ -84,7 +84,7 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
 
     override fun onBeaconServiceConnect() {
         try {
-            region?.let { beaconManager.startRangingBeacons(it) }
+            region?.let { beaconManager.startRangingBeaconsInRegion(it) }
         } catch (e: Exception) {
             // ignore for POC
         }
