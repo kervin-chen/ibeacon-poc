@@ -20,8 +20,8 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
 
     override fun initialize() {
         super.initialize()
-        // Replace any existing parsers with only the iBeacon parser and log
-        val parserLayout = "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"
+        // Allow extra data after Tx Power (trailing bytes) for non-standard iBeacon frames
+        val parserLayout = "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24,*"
         beaconManager.beaconParsers.clear()
         beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout(parserLayout))
         Log.d("IBeaconPoc", "Beacon parsers initialized. count=${beaconManager.beaconParsers.size} layout=${parserLayout}")
