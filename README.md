@@ -100,6 +100,37 @@ Notes:
 - Android permissions must be declared in the host app manifest (already provided by library, but ensure you include if minSdk < 31).
 - Distances are raw estimates; smoothing recommended for stability.
 
+## 2D / 3D Positioning (POC)
+
+Add known beacon anchors (with fixed coordinates) and retrieve estimated position.
+
+```ts
+import { setAnchors, getEstimatedPosition } from '@rently/ibeacon-poc';
+
+// Define anchors (meters in a local coordinate system)
+setAnchors([
+  { uuid: 'E2C56DB5-DFFB-48D2-B060-D0F5A71096E0', major: 1, minor: 1, x: 0,  y: 0,  z: 1.2 },
+  { uuid: 'E2C56DB5-DFFB-48D2-B060-D0F5A71096E0', major: 1, minor: 2, x: 5,  y: 0,  z: 1.2 },
+  { uuid: 'E2C56DB5-DFFB-48D2-B060-D0F5A71096E0', major: 1, minor: 3, x: 0,  y: 5,  z: 1.2 },
+  { uuid: 'E2C56DB5-DFFB-48D2-B060-D0F5A71096E0', major: 1, minor: 4, x: 5,  y: 5,  z: 1.2 },
+]);
+
+// Periodically (e.g. every second) call:
+const pos = await getEstimatedPosition();
+if (pos) {
+  if ('z' in pos) {
+    console.log('3D position', pos.x, pos.y, pos.z, 'quality', pos.quality);
+  } else {
+    console.log('2D position', pos.x, pos.y, 'quality', pos.quality);
+  }
+}
+```
+
+Notes:
+- Requires distances from at least 4 anchors for 3D; returns 2D if only 3.
+- Distances are smoothed (EMA). Further filtering (Kalman) can be added.
+- Coordinate system is arbitrary local reference (choose an origin and units in meters).
+
 ## Roadmap
 - Android: integrate AltBeacon library, expose scan periods, parsing & distance estimation.
 - iOS: CoreLocation beacon ranging (CLLocationManager / CLBeaconRegion).
