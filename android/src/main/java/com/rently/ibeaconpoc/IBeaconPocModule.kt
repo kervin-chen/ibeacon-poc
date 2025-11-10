@@ -87,6 +87,12 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
         promise.resolve(arr)
     }
 
+    @ReactMethod
+    fun addListener(eventName: String) { /* Required for RN NativeEventEmitter */ }
+
+    @ReactMethod
+    fun removeListeners(count: Int) { /* Required for RN NativeEventEmitter */ }
+
     override fun onBeaconServiceConnect() {
         try {
             region?.let { beaconManager.startRangingBeaconsInRegion(it) }

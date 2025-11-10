@@ -78,6 +78,12 @@ class IBeaconExtendedScannerModule(private val reactContext: ReactApplicationCon
         promise.resolve(arr)
     }
 
+    @ReactMethod
+    fun addListener(eventName: String) { /* RN requires stub */ }
+
+    @ReactMethod
+    fun removeListeners(count: Int) { /* RN requires stub */ }
+
     private fun parseResult(result: ScanResult) {
         val record = result.scanRecord ?: return
         // Manufacturer data for Apple (0x004C little endian 4C 00)
@@ -135,10 +141,14 @@ class IBeaconExtendedScannerModule(private val reactContext: ReactApplicationCon
     }
 
     private fun bytesToUuid(bytes: ByteArray): String {
-        // Convert 16 bytes to UUID string
+        // Convert 16 bytes to UUID string (8-4-4-4-12)
         return String.format(
             "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-            bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]
+            bytes[0], bytes[1], bytes[2], bytes[3],
+            bytes[4], bytes[5],
+            bytes[6], bytes[7],
+            bytes[8], bytes[9],
+            bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]
         ).lowercase()
     }
 
