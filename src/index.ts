@@ -50,6 +50,15 @@ export interface Position3D {
 
 export interface Position2D { x: number; y: number; anchorsUsed: number; residual?: number; quality?: 'low' | 'medium' | 'high'; }
 
+interface ExtendedScannerModule {
+  start(options?: { legacyOnly?: boolean }): Promise<void>;
+  stop(): Promise<void>;
+  isScanning(): Promise<boolean>;
+  getLastSeen(): Promise<BeaconInfo[]>; // same shape as BeaconInfo
+  addListener(event: 'extendedBeaconsUpdated' | 'extendedScannerError', cb: (payload: any) => void): void;
+  removeListener(event: 'extendedBeaconsUpdated' | 'extendedScannerError', cb: (payload: any) => void): void;
+}
+
 const native = NativeModules.IBeaconPoc as any;
 const emitter = new NativeEventEmitter(native);
 let subscription: any;
@@ -57,6 +66,11 @@ let cached: BeaconInfo[] = [];
 let anchors: BeaconAnchor[] = [];
 const emaDistances: Record<string, number> = {}; // exponential moving average per beacon key
 const emaAlpha = 0.35; // smoothing factor
+
+const nativeExtended = NativeModules.IBeaconExtendedScanner as any;
+let extEmitter: NativeEventEmitter | null = nativeExtended ? new NativeEventEmitter(nativeExtended) : null;
+let extCache: BeaconInfo[] = [];
+let extSub: any;
 
 export const IBeacon: IBeaconModule = {
   async startScanning(options) {
@@ -85,6 +99,24 @@ export const IBeacon: IBeaconModule = {
     return 'authorized';
   }
 };
+
+export const IBeaconExtendedScanner: ExtendedScannerModule | undefined = nativeExtended ? {
+  async start(options) {
+    if (!extEmitter) throw new Error('Extended scanner not available');
+    if (!extSub) {
+      extSub = extEmitter.addListener('extendedBeaconsUpdated', (arr: BeaconInfo[]) => { extCache = arr; });
+    }
+    await nativeExtended.start(options || {});
+  },
+  async stop() {
+    if (extSub) { extSub.remove(); extSub = null; }
+    await nativeExtended.stop();
+  },
+  async isScanning() { return nativeExtended.isScanning(); },
+  async getLastSeen() { return extCache; },
+  addListener(event, cb) { extEmitter?.addListener(event, cb); },
+  removeListener(event, cb) { extEmitter?.removeListener(event, cb as any); }
+}: undefined;
 
 export function setAnchors(a: BeaconAnchor[]) { anchors = a.slice(); }
 

@@ -131,6 +131,38 @@ Notes:
 - Distances are smoothed (EMA). Further filtering (Kalman) can be added.
 - Coordinate system is arbitrary local reference (choose an origin and units in meters).
 
+### Optional Extended Advertising Scanner (Android Only)
+
+Use when firmware only emits iBeacon payload via Bluetooth 5 extended advertising. Not supported on iOS.
+
+```ts
+import { IBeaconExtendedScanner } from '@rently/ibeacon-poc';
+
+if (IBeaconExtendedScanner) {
+  await IBeaconExtendedScanner.start({ legacyOnly: false });
+  IBeaconExtendedScanner.addListener('extendedBeaconsUpdated', (beacons) => {
+    console.log('Extended beacons', beacons);
+  });
+}
+```
+
+## Stopping Scans
+
+Main iBeacon ranging:
+```ts
+// Stop ranging (remove listener if you added custom one)
+IBeacon.stopScanning();
+```
+Extended advertising scanner (Android only):
+```ts
+if (IBeaconExtendedScanner) {
+  IBeaconExtendedScanner.stop();
+}
+```
+Call these in component unmount (React useEffect cleanup) or when you no longer need updates to conserve battery.
+
+Remove by deleting the `IBeaconExtendedScannerModule.kt` and its registration in `IBeaconPocPackage`.
+
 ## Roadmap
 - Android: integrate AltBeacon library, expose scan periods, parsing & distance estimation.
 - iOS: CoreLocation beacon ranging (CLLocationManager / CLBeaconRegion).
