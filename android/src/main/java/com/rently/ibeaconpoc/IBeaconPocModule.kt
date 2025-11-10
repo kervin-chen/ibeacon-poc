@@ -20,11 +20,11 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
 
     override fun initialize() {
         super.initialize()
-        // Always ensure iBeacon parser present (avoid conditional contains mismatch)
+        // Replace any existing parsers with only the iBeacon parser and log
         val parserLayout = "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"
-        if (beaconManager.beaconParsers.none { it.layout == parserLayout }) {
-            beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout(parserLayout))
-        }
+        beaconManager.beaconParsers.clear()
+        beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout(parserLayout))
+        Log.d("IBeaconPoc", "Beacon parsers initialized. count=${beaconManager.beaconParsers.size} layout=${parserLayout}")
     }
 
     @ReactMethod
