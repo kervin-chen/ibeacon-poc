@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.util.Log
 
 class IBeaconPocModule(private val reactContext: ReactApplicationContext): ReactContextBaseJavaModule(reactContext), BeaconConsumer, RangeNotifier {
     private val beaconManager: BeaconManager by lazy { BeaconManager.getInstanceForApplication(reactContext) }
@@ -19,18 +20,18 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
 
     override fun initialize() {
         super.initialize()
-        // iBeacon layout default already included from 2.20+, ensure parser
-        if (beaconManager.beaconParsers.none { it.layout.contains("m:2-3=0215") }) {
-            val iBeaconParser = BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24")
-            beaconManager.beaconParsers.add(iBeaconParser)
+        // Always ensure iBeacon parser present (avoid conditional contains mismatch)
+        val parserLayout = "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"
+        if (beaconManager.beaconParsers.none { it.layout == parserLayout }) {
+            beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout(parserLayout))
         }
     }
 
     @ReactMethod
     fun startScanning(options: ReadableMap?, promise: Promise) {
-        // Request runtime permissions (Android 12+ requires BLUETOOTH_SCAN/CONNECT + location)
         if (!hasAllPermissions()) {
-            requestPermissions() // host app should actually request and then retry
+            promise.reject("perm", "Missing BLE permissions/location")
+            return
         }
         if (isScanning) { promise.resolve(null); return }
         val uuids = options?.getArray("uuids")?.toArrayList()?.map { it.toString() }
@@ -44,6 +45,7 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
         try {
             beaconManager.foregroundScanPeriod = scanPeriod.toLong()
             beaconManager.foregroundBetweenScanPeriod = betweenScanPeriod.toLong()
+            beaconManager.updateScanPeriods() // apply changes immediately
             // Disable scheduled jobs for faster foreground ranging in a library context
             beaconManager.setEnableScheduledScanJobs(false)
             beaconManager.setBackgroundMode(false)
@@ -93,6 +95,14 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
     @ReactMethod
     fun removeListeners(count: Int) { /* Required for RN NativeEventEmitter */ }
 
+    @ReactMethod
+    fun enableDebug(promise: Promise) {
+        try {
+            BeaconManager.setDebug(true)
+            promise.resolve(true)
+        } catch (e: Exception) { promise.reject("debug_error", e) }
+    }
+
     override fun onBeaconServiceConnect() {
         try {
             region?.let { beaconManager.startRangingBeaconsInRegion(it) }
@@ -101,6 +111,7 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
 
     override fun didRangeBeaconsInRegion(beacons: Collection<Beacon>, region: Region) {
         lastSeen = beacons.toList()
+        Log.d("IBeaconPoc", "Ranged ${beacons.size} beacons in region ${region.uniqueId}")
         val arr = Arguments.createArray()
         beacons.forEach { b ->
             val map = Arguments.createMap()

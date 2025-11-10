@@ -28,6 +28,7 @@ export interface IBeaconModule {
   removeListener(event: 'beaconsUpdated', callback: (beacons: BeaconInfo[]) => void): void;
   // iOS specific for authorization
   requestAuthorization(): Promise<'authorized' | 'denied' | 'restricted' | 'notDetermined'>;
+  enableDebug?(): Promise<boolean>; // Android only
 }
 
 // Anchor definition (known fixed beacon positions)
@@ -97,6 +98,10 @@ export const IBeacon: IBeaconModule = {
   async requestAuthorization() {
     if (Platform.OS === 'ios') return native.requestAuthorization();
     return 'authorized';
+  },
+  async enableDebug() {
+    if (native && native.enableDebug) return native.enableDebug();
+    return false;
   }
 };
 
