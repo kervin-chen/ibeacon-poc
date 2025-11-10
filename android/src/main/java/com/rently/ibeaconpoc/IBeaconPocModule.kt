@@ -49,6 +49,8 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
             // Disable scheduled jobs for faster foreground ranging in a library context
             beaconManager.setEnableScheduledScanJobs(false)
             beaconManager.setBackgroundMode(false)
+            // Ensure parsers are available inside service process before bind
+            beaconManager.setScannerInSameProcess(true)
             beaconManager.addRangeNotifier(this)
             beaconManager.bind(this)
             isScanning = true
@@ -105,6 +107,7 @@ class IBeaconPocModule(private val reactContext: ReactApplicationContext): React
 
     override fun onBeaconServiceConnect() {
         try {
+            Log.d("IBeaconPoc", "onBeaconServiceConnect parsers=${beaconManager.beaconParsers.size}")
             region?.let { beaconManager.startRangingBeaconsInRegion(it) }
         } catch (_: Exception) { }
     }
