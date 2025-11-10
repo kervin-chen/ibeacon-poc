@@ -86,30 +86,25 @@ class IBeaconExtendedScannerModule(private val reactContext: ReactApplicationCon
 
     private fun parseResult(result: ScanResult) {
         val record = result.scanRecord ?: return
-        // Manufacturer data for Apple (0x004C little endian 4C 00)
-        val data = record.getManufacturerSpecificData(0x004C) ?: return
-        // Expect first two bytes 0x02 0x15 for iBeacon
-        if (data.size < 23 || data[0] != 0x02.toByte() || data[1] != 0x15.toByte()) return
+        val advBytes = record.bytes ?: return
+        // Convert full advertisement to hex string
+        val rawAdv = advBytes.joinToString("") { b -> String.format("%02x", b) }
+        // Apple manufacturer data if present (raw)
+        val apple = record.getManufacturerSpecificData(0x004C)
+        val appleHex = apple?.joinToString("") { b -> String.format("%02x", b) }
         try {
-            val uuidBytes = data.copyOfRange(2, 18)
-            val majorBytes = data.copyOfRange(18, 20)
-            val minorBytes = data.copyOfRange(20, 22)
-            val txPower = data[22].toInt() // signed
-            val uuid = bytesToUuid(uuidBytes)
-            val major = ((majorBytes[0].toInt() and 0xFF) shl 8) + (majorBytes[1].toInt() and 0xFF)
-            val minor = ((minorBytes[0].toInt() and 0xFF) shl 8) + (minorBytes[1].toInt() and 0xFF)
-            val rssi = result.rssi
-            val distance = estimateDistance(rssi, txPower)
-            val key = "$uuid-$major-$minor"
             val map = Arguments.createMap()
-            map.putString("uuid", uuid)
-            map.putInt("major", major)
-            map.putInt("minor", minor)
-            map.putInt("rssi", rssi)
-            map.putInt("txPower", txPower)
-            map.putDouble("distance", distance)
+            map.putString("rawAdv", rawAdv)
+            if (appleHex != null) map.putString("appleMfgData", appleHex)
+            map.putInt("rssi", result.rssi)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                map.putInt("txPower", result.txPower)
+            }
+            map.putInt("primaryPhy", result.primaryPhy)
+            map.putInt("secondaryPhy", result.secondaryPhy)
+            // Key based on raw + rssi timestamp uniqueness
+            val key = rawAdv
             lastSeen[key] = map
-            // Throttle events to avoid spamming: post aggregated every 500ms
             scheduleEmit()
         } catch (_: Exception) {}
     }
